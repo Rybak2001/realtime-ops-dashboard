@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
-import { findAll } from "@/lib/store";
+import dbConnect from "@/lib/mongodb";
+import Incident from "@/models/Incident";
 
 export async function GET() {
-  const incidents = findAll();
+  await dbConnect();
+
+  const incidents = await Incident.find().sort({ createdAt: -1 }).lean();
 
   const severityLabel: Record<string, string> = {
     low: "Baja",
