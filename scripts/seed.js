@@ -1,4 +1,7 @@
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 require("dotenv").config({ path: ".env.local" });
 
 const IncidentSchema = new mongoose.Schema(
@@ -57,6 +60,23 @@ async function seed() {
 
   await Incident.deleteMany({});
   console.log("🗑️  Cleared existing incidents");
+
+  // Create users
+  const UserSchema = new mongoose.Schema(
+    { email: { type: String, unique: true }, passwordHash: String, name: String, role: { type: String, enum: ["admin", "operator", "viewer"] }, active: { type: Boolean, default: true } },
+    { timestamps: true }
+  );
+  const User = mongoose.model("User", UserSchema);
+  await User.deleteMany({});
+
+  const adminHash = await bcrypt.hash("admin123", 12);
+  const opHash = await bcrypt.hash("operator123", 12);
+  await User.insertMany([
+    { email: "admin@opsboard.com", passwordHash: adminHash, name: "Admin", role: "admin", active: true },
+    { email: "operador@opsboard.com", passwordHash: opHash, name: "Operador Demo", role: "operator", active: true },
+    { email: "viewer@opsboard.com", passwordHash: opHash, name: "Viewer Demo", role: "viewer", active: true },
+  ]);
+  console.log("✅ Created 3 users (admin@opsboard.com/admin123, operador@opsboard.com/operator123)");
 
   const incidents = [];
   for (let i = 0; i < 30; i++) {
